@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SignUp</title>
+
+<link rel="stylesheet" th:href="@{/css/default.css}" />
+    <link rel="stylesheet" th:href="@{/css/common.css}" />
+    <link rel="stylesheet" th:href="@{/css/content.css}" />
+    <link rel="stylesheet" th:href="@{/css/button.css}" />
+</head>
+<body>
+		<h3>SignUp</h3>
+		<div class="pop_container">
+			<form id="signupForm" action="/signup" method="post">
+			    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+				<table class="tb tb_row tl">
+					<colgroup>
+						<col style="width:30%;" /><col style="width:70%;" />
+					</colgroup>
+					<tbody>
+						<tr>
+							<th scope="row">ID<span class="es">必須</span></th>
+							<td>
+								<input type="text" name="loginId" placeholder="ID" maxlength="20" style="width: 80%;" />
+								<button type="button" id="idCheckBtn" class="btns btn_st5" onclick="checkLoginId();" style="width: 20%; float: right;">重複確認</button>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">PASSWORD<span class="es">必須</span></th>
+							<td><input type="password" name="password" placeholder="password" maxlength="30" /></td>
+						</tr>
+						<tr>
+							<th scope="row">PASSWORD　再入力<span class="es">必須</span></th>
+							<td><input type="password" name="passwordCheck" placeholder="password　再入力" maxlength="30" /></td>
+						</tr>
+						<tr>
+							<th scope="row">名前<span class="es">必須</span></th>
+							<td><input type="text" name="name" placeholder="名前" maxlength="10" /></td>
+						</tr>
+						<tr>
+							<th scope="row">性別<span class="es">必須</span></th>
+							<td>
+								<div class="radio_group">
+									<p class="radios">
+										<input type="radio" id="male" name="gender" value="M" checked />
+										<label for="male">男性</label><span class="check"></span>
+									</p>
+									<p class="radios">
+										<input type="radio" id="female" name="gender" value="F" />
+										<label for="female">女性</label><span class="check"></span>
+									</p>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">生年月日<span class="es">必須</span></th>
+							<td><input type="date" name="birthday"/></td>
+						</tr>
+					</tbody>
+				</table>
+			<p class="btn_set">
+				<button type="button" class="btns btn_st2" onclick="checkSubmit();">登録</button>				
+				<button type="button" class="btns btn_bdr2" onclick="history.back();">キャンセル</button>
+			</p>
+			</form>
+		</div>
+		<button type="button" class="btn_close" onclick="closeSignupPopup();"><span><i class="far fa-times-circle"></i></span></button>
+	</div>
+	
+	
+	<script th:src="@{/js/jquery-3.6.0.min.js}"></script>
+	<script>
+	// 重複チェック
+    let isIdChecked = false;
+
+    // ID重複チェック
+    function checkLoginId() {
+        const loginId = $('input[name="loginId"]').val().trim();
+        if (loginId === "") {
+            alert("ユーザーIDを入力してください。");
+            return;
+        }
+
+        $.ajax({
+            url: '/member/check-id',
+            type: 'GET',
+            data: { loginId: loginId },
+            success: function(response) {
+                if (response === true) {
+                    alert("このユーザーIDは既に使用されています。");
+                    isIdChecked = false;
+                } else {
+                    alert("使用可能なユーザーIDです。");
+                    isIdChecked = true; // 重複チェック成功
+                }
+            }
+        });
+    }
+
+    // フォーム送信時のバリデーション
+    function checkSubmit() {
+        const form = $('#signupForm');
+        const loginId = $('input[name="loginId"]').val().trim();
+        const password = $('input[name="password"]').val().trim();
+        const passwordCheck = $('input[name="passwordCheck"]').val().trim();
+        const name = $('input[name="name"]').val().trim();
+        const birthday = $('input[name="birthday"]').val().trim();
+
+        // 必須入力項目のチェック
+        if (!loginId) { alert("ユーザーIDを入力してください。"); return; }
+        if (!isIdChecked) { alert("ユーザーIDの重複チェックを行ってください。"); return; }
+        
+        if (!password) { alert("パスワードを入力してください。"); return; }
+        
+        // パスワードの一致確認
+        if (password !== passwordCheck) { 
+            alert("パスワードが一致しません。"); 
+            return; 
+        }
+        
+        if (!name) { alert("お名前を入力してください。"); return; }
+        if (!birthday) { alert("生年月日を入力してください。"); return; }
+
+        // 全てのバリデーションを通過した場合、サーバーへ送信
+        if (confirm("会員登録を進行しますか？")) {
+            form.submit();
+        }
+    }
+
+    // ユーザーIDの入力値が変更された場合、重複チェック状態をリセット
+    $('input[name="loginId"]').on('change', function() {
+        isIdChecked = false;
+    });
+	</script>
+</body>
+
+
+
+</html>

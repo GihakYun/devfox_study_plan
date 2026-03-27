@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.study.Board.domain.member.MemberMapper">
+
+    <sql id="memberColumns">
+          id
+        , login_id AS loginId				<!-- DTOと対応するように作成 -->
+        , password
+        , name
+        , gender
+        , birthday
+        , delete_yn AS deleteYn				<!-- DTOと対応するように作成 -->
+        , created_date AS createDate		<!-- DTOと対応するように作成 -->
+        , modified_date AS modifiedDate		<!-- DTOと対応するように作成 -->
+    </sql>
+
+    <insert id="save" parameterType="com.study.Board.domain.member.MemberRequest">
+        
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            SELECT SEQ_MEMBER_ID.NEXTVAL FROM DUAL	<!-- INSERT前にSequenceの次採番を事前取得 -->
+        </selectKey>
+        
+        INSERT INTO member (
+              id
+            , login_id
+            , password
+            , name
+            , gender
+            , birthday
+            , delete_yn
+            , created_date
+        ) VALUES (
+              #{id}
+            , #{loginId}
+            , #{password}
+            , #{name}
+            , #{gender}
+            , #{birthday}
+            , 0
+            , SYSDATE
+        )
+    </insert>
+
+    <select id="findByLoginId" parameterType="string" resultType="com.study.Board.domain.member.MemberResponse">
+        SELECT
+            <include refid="memberColumns" />	<!-- 先ほど定義したテーブルカラム -->
+        FROM
+            member
+        WHERE
+            delete_yn = 0
+            AND login_id = #{loginId}
+    </select>
+
+    <update id="update" parameterType="com.study.Board.domain.member.MemberRequest">
+        UPDATE member
+        SET
+              modified_date = SYSDATE
+            <if test="password != null and password != ''">	<!-- 修正されたパスワードがnullでない場合のみ実行 -->
+            , password = #{password}
+            </if>
+        WHERE
+            id = #{id}
+    </update>
+	
+	<!-- delete_yn columnを更新し、削除の可否を判定 -->	
+    <update id="deleteById" parameterType="long">
+        UPDATE member
+        SET
+            delete_yn = 1
+        WHERE
+            id = #{id}
+    </update>
+    
+    <select id="countByLoginId" parameterType="string" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            member
+        WHERE
+            login_id = #{loginId}
+    </select>
+
+</mapper>

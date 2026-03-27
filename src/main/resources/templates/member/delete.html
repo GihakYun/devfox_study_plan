@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Member Delete</title>
+</head>
+<body>
+
+退会しますか？
+<form action="/member/delete" method="post">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+	<input type="hidden" name="id" th:value="${member.id}">
+	<button type="submit">退会</button><button type="button" onclick="history.back();">キャンセル</button>
+	
+</form>
+</body>
+</html>

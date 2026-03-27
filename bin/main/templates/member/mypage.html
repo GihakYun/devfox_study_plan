@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mypage</title>
+<div th:if="${session.loginMember != null}" class="top_menu">
+                <div class="login_user"><strong><i class="far fa-user-circle"></i> [[ ${session.loginMember.name} ]]</strong>様</div>
+                <div class="logout">
+                    <form action="/logout" method="post">
+                    	<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit"><span class="skip_info">ログアウト</span><i class="fas fa-sign-out-alt"></i></button>
+                    </form>
+                </div>
+            </div>
+
+</head>
+<body>
+	<h1>MyPage</h1>
+	
+	<a href="/member/modify">修正</a>
+	<a href="/member/delete">退会</a>
+	
+	
+</body>
+</html>
