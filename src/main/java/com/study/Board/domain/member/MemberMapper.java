@@ -19,5 +19,8 @@ public interface MemberMapper {
 
     // 会員数のカウント (ID重複チェック用)
     int countByLoginId(String loginId);
+    
+    // 会員詳細情報の照会
+    MemberResponse findById(Long id);
 
 }

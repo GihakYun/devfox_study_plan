@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.study.Board.domain.board.BoardMapper">
+
+    <!-- Boardテーブルの全カラム -->
+    <sql id="boardColumns">
+          id
+        , member_id 
+        , title
+        , content
+        , writer
+        , view_cnt
+        , created_date
+        , modified_date
+    </sql>
+    
+    <!-- 掲示物の検索条件 -->
+    <sql id="search">
+    <if test="keyword != null and keyword != ''">
+        <choose>
+            <when test="searchType != null and searchType != ''">
+                <choose>
+                    <!-- '%' || #{keyword} || '%' 方式に変更 (Oracle) -->
+                    <when test="'title'.equals( searchType )">
+                        AND title LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <when test="'content'.equals( searchType )">
+                        AND content LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <when test="'writer'.equals( searchType )">
+                        AND writer LIKE '%' || #{keyword} || '%'
+                    </when>
+                </choose>
+            </when>
+            <otherwise>
+                AND (
+                       title LIKE '%' || #{keyword} || '%'
+                    OR content LIKE '%' || #{keyword} || '%'
+                    OR writer LIKE '%' || #{keyword} || '%'
+                )
+            </otherwise>
+        </choose>
+    </if>
+</sql>
+
+
+    <!-- 掲示物の保存 -->
+    <insert id="save" parameterType="com.study.Board.domain.board.BoardRequest">
+    	
+    	<selectKey keyProperty="id" resultType="long" order="BEFORE">
+            SELECT SEQ_BOARD_ID.NEXTVAL FROM DUAL	<!-- INSERT前にシーケンスから次の採番を取得 -->
+        </selectKey>
+    
+        INSERT INTO BOARD (
+            <include refid="boardColumns" />
+        ) VALUES (
+              #{id}
+            , #{memberId} 
+            , #{title}
+            , #{content}
+            , #{writer}
+            , 0
+            , sysdate
+            , NULL
+        )
+    </insert>
+
+
+    <!-- 掲示物の詳細情報照会 -->
+    <select id="findById" parameterType="long" resultType="com.study.Board.domain.board.BoardResponse">
+        SELECT
+            <include refid="boardColumns" />
+        FROM
+            BOARD
+        WHERE
+            id = #{value}
+    </select>
+
+
+    <!-- 掲示物の修正 -->
+    <update id="update" parameterType="com.study.Board.domain.board.BoardRequest">
+        UPDATE BOARD
+        SET
+              modified_date = sysdate
+            , title = #{title}
+            , content = #{content}
+            , writer = #{writer}
+        WHERE
+            id = #{id}
+    </update>
+
+
+    <!-- 掲示物の削除 -->
+    <delete id="deleteById" parameterType="long">
+        DELETE 
+        	FROM 
+        BOARD
+        WHERE
+        	id = #{id}
+    </delete>
+
+
+    
+   <!-- 掲示物リストの照会 (Oracle ROWNUM 方式) -->
+    <select id="findAll" parameterType="com.study.Board.dto.SearchDto" resultType="com.study.Board.domain.board.BoardResponse">
+        SELECT *
+        FROM (
+            SELECT 
+                SUB.*, 
+                ROWNUM AS RNUM
+            FROM (
+                SELECT
+                    <include refid="boardColumns" />
+                FROM
+                    BOARD
+                <where>
+                    <include refid="search" />
+                </where>
+                ORDER BY id DESC
+            ) SUB
+            WHERE ROWNUM &lt;= #{pagination.limitStart} + #{recordSize}
+        )
+        WHERE RNUM &gt; #{pagination.limitStart}
+    </select>
+    
+    
+    <!-- 掲示物数のカウント -->
+    <select id="count" parameterType="com.study.Board.dto.SearchDto" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            BOARD
+        <where>
+            <include refid="search" />
+        </where>
+    </select>
+    
+</mapper>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title>掲示板リスト</title>
+    <link rel="stylesheet" th:href="@{/css/default.css}" />
+    <link rel="stylesheet" th:href="@{/css/common.css}" />
+    <link rel="stylesheet" th:href="@{/css/content.css}" />
+    <link rel="stylesheet" th:href="@{/css/button.css}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+    <th:block layout:fragment="content">
+        <div class="page_tits">
+            <h3>掲示板管理</h3>
+            <p class="path"><strong>現在位置 :</strong> <span>掲示板管理</span> <span>リスト型</span> <span>リスト</span></p>
+        </div>
+
+        <div class="content">
+            <section>
+                <!-- 検索エリア -->
+                <div class="search_box">
+                    <form id="searchForm" onsubmit="return false;" autocomplete="off">
+                        <div class="sch_group fl">
+                            <select title="検索タイプの選択" id="searchType">
+                                <option value="">全体検索</option>
+                                <option value="title">タイトル</option>
+                                <option value="content">内容</option>
+                                <option value="writer">作成者</option>
+                            </select>
+                            <input type="text" placeholder="キーワードを入力してください。" title="キーワード入力" id="searchKeyword"/>
+                            <button type="button" class="bt_search" onclick="movePage(1);"><i class="fas fa-search"></i><span class="skip_info">検索</span></button>
+                        </div>
+                    </form>
+                </div>
+              
+                <!-- リストエリア -->
+                <table class="tb tb_col">
+                    <colgroup>
+                        <col style="width:50px;"/><col style="width:8%;"/><col style="width:auto;"/><col style="width:15%;"/><col style="width:15%;"/><col style="width:10%;"/>
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th scope="col">*</th>
+                            <th scope="col">番号</th>
+                            <th scope="col">タイトル</th>
+                            <th scope="col">作成者</th>
+                            <th scope="col">登録日</th>
+                            <th scope="col">照会</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list">
+                        <tr th:if="${not #lists.isEmpty( boards )}" th:each="row, status : ${boards}">
+                        	<td>*</td>
+                            <td th:text="${pagination.totalRecordCount - ((params.page - 1) * params.recordSize) - status.index}"></td>
+                            <td class="tl"><a th:href="@{/board/view.do( id=${row.id} )}" th:text="${row.title}"></a></td>
+                            <td th:text="${row.writer}"></td>
+                            <td th:text="${#temporals.format( row.createdDate, 'yyyy-MM-dd HH:mm' )}"></td>
+                            <td th:text="${row.viewCnt}"></td>
+                        </tr>
+    
+                        <tr th:unless="${not #lists.isEmpty( boards )}">
+                            <td colspan="6">
+                                <div class="no_data_msg">検索結果がありません。</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- ページネーション -->
+                <div class="paging"></div>
+
+                <!-- ボタン -->
+                <p class="btn_set tr">
+                    <a th:href="@{/board/write.do}" class="btns btn_st3 btn_mid">新規投稿</a>
+                </p>
+            </section>
+        </div>
+    </th:block>
+    
+    <script th:inline="javascript">
+        window.onload = () => {
+            // ページロード時にページネーションを描画
+            const pagination = [[${pagination}]];
+            const params = [[${params}]];
+            drawPage(pagination, params);
+        }
+
+        // ページネーションのレンダリング
+        function drawPage(pagination, params) {
+            if (!pagination || !params || pagination.totalRecordCount === 0) {
+                document.querySelector('.paging').innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            // 最初・前へボタン
+            if (pagination.existPrevPage) {
+                html += `
+                    <a href="javascript:void(0);" onclick="movePage(1)" class="page_bt first">最初</a>
+                    <a href="javascript:void(0);" onclick="movePage(${pagination.startPage - 1})" class="page_bt prev">前へ</a>
+                `;
+            }
+
+            // ページ番号リスト
+            html += '<p>';
+            for (let i = pagination.startPage; i <= pagination.endPage; i++) {
+                html += (i !== params.page)
+                    ? `<a href="javascript:void(0);" onclick="movePage(${i});">${i}</a>`
+                    : `<span class="on">${i}</span>`;
+            }
+            html += '</p>';
+
+            // 次へ・最後ボタン
+            if (pagination.existNextPage) {
+                html += `
+                    <a href="javascript:void(0);" onclick="movePage(${pagination.endPage + 1});" class="page_bt next">次へ</a>
+                    <a href="javascript:void(0);" onclick="movePage(${pagination.totalPageCount});" class="page_bt last">最後</a>
+                `;
+            }
+
+            document.querySelector('.paging').innerHTML = html;
+        }
+
+       
+        // ページ移動
+        function movePage(page) {
+            const queryParams = {
+                page: (page) ? page : 1,
+                recordSize: 10,
+                pageSize: 10,
+                // 検索条件
+                searchType: document.getElementById('searchType').value,
+                keyword: document.getElementById('searchKeyword').value
+            };
+            
+            location.href = location.pathname + '?' + new URLSearchParams(queryParams).toString();
+        }
+    </script>
+    
+</body>
+</html>

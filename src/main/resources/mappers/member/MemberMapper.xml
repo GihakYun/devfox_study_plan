@@ -80,5 +80,15 @@
         WHERE
             login_id = #{loginId}
     </select>
+    
+    
+    <select id="findById" parameterType="long" resultType="com.study.Board.domain.member.MemberResponse">
+        SELECT
+            <include refid="memberColumns" />
+        FROM
+            member
+        WHERE
+            AND id = #{id}
+    </select>
 
 </mapper>

@@ -73,4 +73,10 @@ public class MemberService {
         
         return member;
     }
+    
+    
+    public MemberResponse getMemberById(Long id) {
+    	
+    	return memberMapper.findById(id);
+    }
 }

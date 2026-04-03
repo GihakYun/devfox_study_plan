@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>詳細ページ</title>
+    <link rel="stylesheet" th:href="@{/css/default.css}" />
+    <link rel="stylesheet" th:href="@{/css/common.css}" />
+    <link rel="stylesheet" th:href="@{/css/content.css}" />
+    <link rel="stylesheet" th:href="@{/css/button.css}" />
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+</head>
+<body>
+    <th:block layout:fragment="content">
+        <div class="page_tits">
+            <h3>掲示板管理</h3>
+            <p class="path">
+                <strong>現在位置 :</strong> <span>掲示板管理</span> <span>リスト型</span> <span>詳細情報</span>
+            </p>
+        </div>
+
+        <div class="content">
+            <section>
+                <table class="tb tb_row">
+                    <colgroup>
+                        <col style="width: 10%;" />
+                        <col style="width: 23%;" />
+                        <col style="width: 10%;" />
+                        <col style="width: 23%;" />
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th scope="row">登録日</th>
+                            <td th:text="${#temporals.format( board.createdDate, 'yyyy-MM-dd HH:mm' )}"></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">タイトル</th>
+                            <td>[[ ${board.title} ]]</td>
+                            <th scope="row">照会</th>
+                            <td colspan="3">[[ ${board.viewCnt} ]]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">名前</th>
+                            <td colspan="3">[[ ${board.writer} ]]</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">内容</th>
+                            <td colspan="3">[[ ${board.content} ]]</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="btn_set">
+                    <a th:href="@{/board/modify.do( id=${board.id} )}" class="btns btn_bdr4 btn_mid">修正</a>
+                    <button type="button" id="deleteBtn" th:data-id="${board.id}" onclick="deleteBoard()" class="btns btn_bdr1 btn_mid">削除する</button>
+                    <a th:href="@{/board/list.do}" class="btns btn_bdr3 btn_mid">戻る</a>
+                </p>
+            </section>
+        </div>
+
+        <!--/* コメント作成 */-->
+        <div class="cm_write">
+            <fieldset>
+                <legend class="skipinfo">コメント入力</legend>
+                <div class="cm_input">
+                    <p>
+                        <input type="text" id="writer" placeholder="作成者" style="width: 150px; margin-bottom: 5px;">
+                    </p>
+                    <p>
+                        <textarea id="content" name="content" onkeyup="countingLength(this);" cols="90" rows="4" placeholder="コメントを入力してください。"></textarea>
+                    </p>
+                    <span>
+                        <button type="button" class="btns" onclick="saveComment();">登 録</button>
+                        <i id="counter">0/300文字</i>
+                    </span>
+                </div>
+            </fieldset>
+        </div>
+        
+        <!--/* コメント修正 popup */-->
+        <div id="commentUpdatePopup" class="popLayer">
+            <h3>コメント修正</h3>
+            <div class="pop_container">
+                <table class="tb tb_row tl">
+                    <colgroup>
+                        <col style="width:30%;" /><col style="width:70%;" />
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th scope="row">作成者<span class="es">必須入力</span></th>
+                            <td><input type="text" id="modalWriter" name="modalWriter" placeholder="作成者を入力してください。" /></td>
+                        </tr>
+                        <tr>
+                            <th scope="row">内容<span class="es">必須入力</span></th>
+                            <td><textarea id="modalContent" name="modalContent" cols="90" rows="10" placeholder="修正する内容を入力してください。"></textarea></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="btn_set">
+                    <button type="button" id="commentUpdateBtn" class="btns btn_st2">修正</button>
+                    <button type="button" class="btns btn_bdr2" onclick="closeCommentUpdatePopup();">キャンセル</button>
+                </p>
+            </div>
+            <button type="button" class="btn_close" onclick="closeCommentUpdatePopup();"><span><i class="far fa-times-circle"></i></span></button>
+        </div>
+
+        <!--/* コメントレンダリング領域 */-->
+        <div class="cm_list"></div>
+    </th:block>
+
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+    <script th:src="@{/js/jquery-3.6.0.min.js}"></script>
+    
+    <script th:inline="javascript">
+        // 掲示物の削除
+        function deleteBoard() {
+            const id = [[ ${board.id} ]];
+            if (!confirm(id + '番目の投稿を削除しますか？')) return;
+
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const form = document.createElement('form');
+            form.setAttribute('method', 'post');
+            form.setAttribute('action', '/board/delete.do');
+
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'id';
+            idInput.value = id;
+            form.appendChild(idInput);
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // コメントの長さカウント
+        function countingLength(content) {
+            if (content.value.length > 300) {
+                alert('コメントは300文字以内で入力してください。');
+                content.value = content.value.substring(0, 300);
+            }
+            document.getElementById('counter').innerText = content.value.length + '/300文字';
+        }
+
+        // コメントの保存
+        function saveComment() {
+            const writer = document.getElementById('writer');
+            const content = document.getElementById('content');
+
+            if (!writer.value.trim()) {
+                alert('作成者を入力してください。');
+                writer.focus();
+                return false;
+            }
+            if (!content.value.trim()) {
+                alert('内容を入力してください。');
+                content.focus();
+                return false;
+            }
+
+            const boardId = [[ ${board.id} ]];
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            const params = {
+                boardId: boardId,
+                writer: writer.value,
+                content: content.value,
+                memberId: [[ ${session.loginMember != null ? session.loginMember.id : null} ]]
+            };
+
+            $.ajax({
+                url: `/board/${boardId}/comments`,
+                type: 'post',
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(params),
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader(header, token);
+                },
+                success: function(response) {
+                    alert('コメントが登録されました。');
+                    content.value = '';
+                    document.getElementById('counter').innerText = '0/300文字';
+                    findAllComment();
+                },
+                error: function() {
+                    alert('コメントの保存に失敗しました。');
+                }
+            });
+        }
+
+        // コメントの全件照会
+        function findAllComment() {
+            const boardId = [[ ${board.id} ]];
+
+            $.ajax({
+                url: `/board/${boardId}/comments`,
+                type: 'get',
+                dataType: 'json',
+                success: function(response) {
+                    if (!response.length) {
+                        document.querySelector('.cm_list').innerHTML = '<div class="cm_none"><p>登録されたコメントがありません。</p></div>';
+                        return;
+                    }
+
+                    let commentHtml = '';
+                    response.forEach(row => {
+                        commentHtml += `
+                            <div>
+                                <span class="writer_img"><img src="/images/default_profile.png" width="30" height="30" alt="プロフィール"/></span>
+                                <p class="writer">
+                                    <em>${row.writer}</em>
+                                    <span class="date">${dayjs(row.createdDate).format('YYYY-MM-DD HH:mm')}</span>
+                                </p>
+                                <div class="cont"><div class="txt_con">${row.content}</div></div>
+                                <p class="func_btns">
+                                    <button type="button" onclick="openCommentUpdatePopup(${row.id});" class="btns"><span class="icons icon_modify">修正</span></button>
+                                    <button type="button" onclick="deleteComment(${row.id});" class="btns"><span class="icons icon_del">削除</span></button>
+                                </p>
+                            </div>
+                        `;
+                    });
+                    document.querySelector('.cm_list').innerHTML = commentHtml;
+                }
+            });
+        }
+
+        window.onload = () => {
+            findAllComment();
+        }
+        
+        // コメント修正ポップアップ open
+        function openCommentUpdatePopup(id) {
+            const boardId = [[ ${board.id} ]];
+
+            $.ajax({
+                url : `/board/${boardId}/comments/${id}`,
+                type : 'get',
+                dataType : 'json',
+                async : false,
+                success : function (response) {
+                    document.getElementById('modalWriter').value = response.writer;
+                    document.getElementById('modalContent').value = response.content;
+                    document.getElementById('commentUpdateBtn').setAttribute('onclick', `updateComment(${id})`);
+                    layerPop('commentUpdatePopup');
+                },
+                error : function (request, status, error) {
+                    console.log(error)
+                }
+            })
+        }
+
+        // コメント修正ポップアップ close
+        function closeCommentUpdatePopup() {
+            document.querySelectorAll('#modalContent, #modalWriter').forEach(element => element.value = '');
+            document.getElementById('commentUpdateBtn').removeAttribute('onclick');
+            layerPopClose('commentUpdatePopup');
+        }
+        
+        // コメント修正
+        function updateComment(id) {
+            const writer = document.getElementById('modalWriter');
+            const content = document.getElementById('modalContent');
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            const boardId = [[ ${board.id} ]];
+            const params = {
+                id : id,
+                boardId : boardId,
+                content : content.value,
+                writer : writer.value
+            }
+
+            $.ajax({
+                url : `/board/${boardId}/comments/${id}`,
+                type : 'patch',
+                contentType : 'application/json; charset=utf-8',
+                dataType : 'json',
+                data : JSON.stringify(params),
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader(header, token);
+                },
+                async : false,
+                success : function (response) {
+                    alert('修正されました。');
+                    closeCommentUpdatePopup();
+                    findAllComment();
+                },
+                error : function (request, status, error) {
+                    console.log(error)
+                }
+            })
+        }
+        
+        // コメント削除
+        function deleteComment(id) {
+            const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            if ( !confirm('選択したコメントを削除しますか？') ) {
+                return false;
+            }
+            
+            const boardId = [[ ${board.id} ]];
+
+            $.ajax({
+                url : `/board/${boardId}/comments/${id}`,
+                type : 'delete',
+                dataType : 'json',
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader(header, token);
+                },
+                async : false,
+                success : function (response) {
+                    alert('削除されました。');
+                    findAllComment();
+                },
+                error : function (request, status, error) {
+                    console.log(error)
+                }
+            })
+        }
+     
+        // レイヤーポップアップを開く
+        function layerPop(id) {
+            const target = document.getElementById(id);
+            if (target) {
+                target.classList.add('on');
+                target.style.display = 'block';
+            }
+        }
+
+        // レイヤーポップアップを閉じる
+        function layerPopClose(id) {
+            const target = document.getElementById(id);
+            if (target) {
+                target.classList.remove('on');
+                target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -121,7 +121,7 @@ public class MemberController {
             return "redirect:/login.do";
         }
         
-        return "redirect:/member/mypage";
+        return "redirect:/board/list.do";
     }
 
     // ログアウト

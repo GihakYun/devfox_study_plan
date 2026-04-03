@@ -18,10 +18,7 @@ public class MemberRequest {
     private char gender;            // 性別
     private LocalDate birthday;     // 生年月日
 
-    /**
-     * パスワードの暗号化
-     * @param passwordEncoder
-     */
+    // パスワードの暗号化
     public void encodingPassword(PasswordEncoder passwordEncoder) {
         if (StringUtils.isEmpty(password)) {
             return;

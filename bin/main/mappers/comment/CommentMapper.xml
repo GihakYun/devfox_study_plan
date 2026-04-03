@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.study.Board.domain.comment.CommentMapper">
+
+    <!-- BOARD_COMMENTテーブルの全カラム -->
+    <sql id="commentColumns">
+          id
+        , board_id
+        , writer
+        , content
+        , member_id
+        , delete_yn
+        , created_date
+        , modified_date
+    </sql>
+
+
+    <!-- コメントの保存 -->
+    <insert id="save" parameterType="com.study.Board.domain.comment.CommentRequest" useGeneratedKeys="true" keyProperty="id">
+    	<selectKey keyProperty="id" resultType="long" order="BEFORE">
+            SELECT SEQ_BOARD_COMMENT_ID.NEXTVAL FROM DUAL	<!-- INSERT前にシーケンスから次の採番を取得 -->
+        </selectKey>
+    
+        INSERT INTO BOARD_COMMENT (
+            <include refid="commentColumns" />
+        ) VALUES (
+              #{id}
+            , #{boardId}
+            , #{writer}
+            , #{content}
+            , #{memberId}
+            , 0
+            , SYSDATE
+            , NULL
+        )
+    </insert>
+
+
+    <!-- コメントの詳細情報照会 -->
+    <select id="findById" parameterType="long" resultType="com.study.Board.domain.comment.CommentResponse">
+        SELECT
+            <include refid="commentColumns" />
+        FROM
+            BOARD_COMMENT
+        WHERE
+            id = #{value}
+    </select>
+
+
+    <!-- コメントの修正 -->
+    <update id="update" parameterType="com.study.Board.domain.comment.CommentRequest">
+        UPDATE BOARD_COMMENT
+        SET
+              modified_date = SYSDATE
+            , content = #{content}
+        WHERE
+            id = #{id}
+    </update>
+
+
+    <!-- コメントの削除 -->
+    <delete id="deleteById" parameterType="long">
+        UPDATE BOARD_COMMENT
+        SET
+            delete_yn = 1
+        WHERE
+            id = #{id}
+    </delete>
+
+
+    <!-- コメントリストの照会 -->
+    <select id="findAll" parameterType="long" resultType="com.study.Board.domain.comment.CommentResponse">
+        SELECT
+            <include refid="commentColumns" />
+        FROM
+            BOARD_COMMENT
+        WHERE
+            delete_yn = 0
+            AND board_id = #{value}
+        ORDER BY
+            id DESC
+    </select>
+
+
+</mapper>
